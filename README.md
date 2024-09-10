@@ -9,7 +9,7 @@
 
 This work presents a novel *temporal fusion* method, specifically designed to expedite the propagation dynamics of SNNs on GPU platforms, which serves as an enhancement to the current significant approaches for handling deep learning tasks with SNNs. This method underwent thorough validation through extensive experiments in both authentic training scenarios and idealized conditions, confirming its efficacy and adaptability for single and multi-GPU systems. 
 
-## Experiment
+## Experiment Setup and Execution
 
 All experiments in this work were conducted under the configuration of `Ubuntu 22.04`, `CUDA 12.4`, and `PyTorch 2.3.1`.
 

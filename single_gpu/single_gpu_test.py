@@ -5,8 +5,6 @@ import argparse
 import torch
 import torch.nn as nn
 from torchvision import transforms, datasets
-from spikingjelly.datasets.n_mnist import NMNIST
-from spikingjelly.datasets.dvs128_gesture import DVS128Gesture
 
 import fused_resnet
 
@@ -54,6 +52,7 @@ if __name__ == "__main__":
         is_dvs = False
     
     elif args.dataset == "N-MNIST":
+        from spikingjelly.datasets.n_mnist import NMNIST
         C = 10    # number of classes
         B = 100   # batch size
         trainset = NMNIST(root=os.path.join(args.data_root, "NMNIST"), train=True, data_type="frame", frames_number=T, split_by="number")
@@ -63,6 +62,7 @@ if __name__ == "__main__":
         is_dvs = True
     
     elif args.dataset == "DvsGesture":
+        from spikingjelly.datasets.dvs128_gesture import DVS128Gesture
         C = 11    # number of classes
         B = 10    # batch size
         trainset = DVS128Gesture(root=os.path.join(args.data_root, "DvsGesture"), train=True, data_type="frame", frames_number=T, split_by="number")
