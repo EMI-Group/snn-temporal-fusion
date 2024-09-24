@@ -38,14 +38,16 @@ The number of GPUs and the number of time steps for the model need to be specifi
 ## Citing This Work
 
 ```latex
-@misc{snn_temporal_fusion,
-      title={Towards scalable {GPU}-accelerated {SNN} training via temporal fusion}, 
-      author={Yanchen Li and Jiachun Li and Kebin Sun and Luziwei Leng and Ran Cheng},
-      year={2024},
-      eprint={2408.00280},
-      archivePrefix={arXiv},
-      primaryClass={cs.AI},
-      url={https://arxiv.org/abs/2408.00280},
+@InProceedings{snn_temporal_fusion_2024,
+    title={Towards scalable {GPU}-accelerated {SNN} training via temporal fusion}, 
+    author={Yanchen Li and Jiachun Li and Kebin Sun and Luziwei Leng and Ran Cheng},
+    year={2024},
+    booktitle={Artificial Neural Networks and Machine Learning -- ICANN 2024},
+    publisher={Springer Nature Switzerland},
+    address={Cham},
+    pages={58--73},
+    isbn={978-3-031-72341-4},
+    doi={10.1007/978-3-031-72341-4_5},
 }
 ```
 
