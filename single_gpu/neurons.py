@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-import temporal_fusion_kernel
+from kernel import temporal_fusion_kernel
 
 
 class FusedLIF(torch.autograd.Function):
