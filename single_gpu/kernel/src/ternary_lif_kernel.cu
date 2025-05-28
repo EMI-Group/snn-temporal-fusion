@@ -3,10 +3,10 @@
 #include <stdio.h>
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
-#include "lif_kernel.h"
+#include "ternary_lif_kernel.h"
 
 
-__global__ void fusedForwardLIFKernel_V(
+__global__ void fusedForwardTernaryLIFKernel_V(
     const float* tX, 
     float* V,        
     float* tY,       
@@ -20,18 +20,26 @@ __global__ void fusedForwardLIFKernel_V(
     if (tensorIndex >= tensorSize) return;
 
     float v = float{ rest };
-    float y = (v >= threshold)? float{ 1 }: float{ 0 };
+    float y = float{ 0 };
     for (int t = 0; t < timeStep; t++) {
         const size_t pos = t * tensorSize + tensorIndex;
-        v = decay * v * (1 - y) + rest * y + tX[pos];
-        y = (v >= threshold)? float{ 1 }: float{ 0 };
+        v = decay * v * (1 - fabs(y)) + tX[pos];
+        if (v >= threshold) {
+            y = float { 1 };
+        } 
+        else if (v <= -threshold) {
+            y = float{ -1 };
+        } 
+        else {
+            y = float { 0 };
+        }
         tY[pos] = y;
     }
     V[tensorIndex] = v;
 }
 
 
-__global__ void fusedForwardLIFKernel_tV(
+__global__ void fusedForwardTernaryLIFKernel_tV(
     const float* tX,
     float* tV,
     float* tY,
@@ -45,18 +53,26 @@ __global__ void fusedForwardLIFKernel_tV(
     if (tensorIndex >= tensorSize) return;
 
     float v = rest;
-    float y = (v >= threshold)? float{ 1 }: float{ 0 };
+    float y = float{ 0 };
     for (int t = 0; t < timeStep; t++) {
         const size_t pos = t * tensorSize + tensorIndex;
-        v = decay * v * (1 - y) + rest * y + tX[pos];
-        y = (v >= threshold)? float{ 1 }: float{ 0 };
+        v = decay * v * (1 - fabs(y)) + tX[pos];
+        if (v >= threshold) {
+            y = float { 1 };
+        } 
+        else if (v <= -threshold) {
+            y = float{ -1 };
+        } 
+        else {
+            y = float { 0 };
+        }
         tV[pos] = v;
         tY[pos] = y;
     }
 }
 
 
-void launch_fusedForwardLIFKernel(
+void launch_fusedForwardTernaryLIFKernel(
     const float* tX, 
     float* V, 
     float* tY, 
@@ -69,7 +85,7 @@ void launch_fusedForwardLIFKernel(
 ) {
     cudaError_t err;
     int gridSize{}, blockSize{};
-    auto lif_kernel = (use_tV)? fusedForwardLIFKernel_tV: fusedForwardLIFKernel_V;
+    auto lif_kernel = (use_tV)? fusedForwardTernaryLIFKernel_tV: fusedForwardTernaryLIFKernel_V;
 
     err = cudaOccupancyMaxPotentialBlockSize(&gridSize, &blockSize, lif_kernel);
     if (err != cudaSuccess) { 
@@ -87,24 +103,18 @@ void launch_fusedForwardLIFKernel(
 } 
 
 
-__device__ float sigmoidSurrogate(
-    const float scalarInput,
-    const float threshold
-) {
-    float alpha = 4.0;
-    return alpha / 2 / (1 + coshf(alpha * scalarInput));
-}
-
-__device__ float hardSigmoidSurrogate(
+__device__ float hardTernarySurrogate(
     const float scalarInput,
     const float threshold,
     const float lens
 ) {
-    return fabs(scalarInput - threshold) < lens? float{ 1 }: float{ 0 };
+    float diff_pos = fabs(scalarInput - threshold);
+    float diff_neg = fabs(scalarInput + threshold);
+    return (diff_pos < lens || diff_neg < lens) ? float{ 1 }:  float{ 0 };
 }
 
 
-__global__ void fusedBackwardLIFKernel(
+__global__ void fusedBackwardTernaryLIFKernel(
     const float* gtY,
     float* gtX,
     const float* tY,
@@ -118,19 +128,19 @@ __global__ void fusedBackwardLIFKernel(
     if (tensorIndex >= tensorSize) return;
 
     float l2v = 0;
-    const float lens = 0.5;
+    const float lens = 0.25;
     for (int t = timeStep - 1; t >= 0; t--) {
         const size_t pos = t * tensorSize + tensorIndex;
-        const float y2v = hardSigmoidSurrogate(tV[pos], threshold, lens); 
+        const float y2v = hardTernarySurrogate(tV[pos], threshold, lens); 
         const float l2y = gtY[pos];
-        const float v2v = decay * (1 - tY[pos] - tV[pos] * y2v);
+        const float v2v = decay * (1 - fabs(tY[pos]));
         l2v = l2y * y2v + l2v * v2v;
         gtX[pos] = l2v;
     }
 }
 
 
-void launch_fusedBackwardLIFKernel(
+void launch_fusedBackwardTernaryLIFKernel(
     const float* gtY,
     float* gtX,
     const float* tY,
@@ -142,14 +152,14 @@ void launch_fusedBackwardLIFKernel(
 ) {
     cudaError_t err;
     int gridSize{}, blockSize{};
-    err = cudaOccupancyMaxPotentialBlockSize(&gridSize, &blockSize, fusedBackwardLIFKernel);
+    err = cudaOccupancyMaxPotentialBlockSize(&gridSize, &blockSize, fusedBackwardTernaryLIFKernel);
     if (err != cudaSuccess) { 
         throw std::runtime_error("CUDA Error: " + std::string(cudaGetErrorString(err)));
     }
     if (gridSize*blockSize < tensorSize) {
         gridSize = (tensorSize - 1) / blockSize + 1;
     }
-    fusedBackwardLIFKernel<<<gridSize, blockSize>>>(gtY, gtX, tY, tV, timeStep, tensorSize, decay, threshold);
+    fusedBackwardTernaryLIFKernel<<<gridSize, blockSize>>>(gtY, gtX, tY, tV, timeStep, tensorSize, decay, threshold);
     err = cudaGetLastError();
     if (err != cudaSuccess) {
         throw std::runtime_error("CUDA Error: " + std::string(cudaGetErrorString(err)));

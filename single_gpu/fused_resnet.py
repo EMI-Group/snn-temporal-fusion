@@ -10,9 +10,9 @@ We acknowledge and thank the contributors of SpikingJelly for their work.
 """
 
 
+import copy
 import torch
 import torch.nn as nn
-import neurons
 
 
 def MergeDimension(x):
@@ -26,14 +26,14 @@ def SplitDimension(x, time_step):
 class BasicBlock(nn.Module):
     expansion = 1
 
-    def __init__(self, inplanes, planes, time_step, stride=1, downsample=None, norm_layer=None):
+    def __init__(self, spiking_neuron, inplanes, planes, time_step, stride=1, downsample=None, norm_layer=None):
         super(BasicBlock, self).__init__()
         self.conv1 = nn.Conv2d(inplanes, planes, stride=stride, kernel_size=3, padding=1, bias=False)
         self.bn1 = norm_layer(planes)
-        self.sn1 = neurons.LIF(decay=0.2, threshold=0.3, time_step=time_step)
+        self.sn1 = copy.deepcopy(spiking_neuron)
         self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, padding=1, bias=False)
         self.bn2 = norm_layer(planes)
-        self.sn2 = neurons.LIF(decay=0.2, threshold=0.3, time_step=time_step)
+        self.sn2 = copy.deepcopy(spiking_neuron)
         self.downsample = downsample
         self.time_step = time_step
 
@@ -63,18 +63,18 @@ class BasicBlock(nn.Module):
 class Bottleneck(nn.Module):
     expansion = 4
 
-    def __init__(self, inplanes, planes, time_step, stride=1, downsample=None, norm_layer=None):
+    def __init__(self, spiking_neuron, inplanes, planes, time_step, stride=1, downsample=None, norm_layer=None):
         super(Bottleneck, self).__init__()
         width = planes
         self.conv1 = nn.Conv2d(inplanes, width, kernel_size=1, bias=False)
         self.bn1 = norm_layer(width)
-        self.sn1 = neurons.LIF(decay=0.2, threshold=0.3, time_step=time_step)
+        self.sn1 = copy.deepcopy(spiking_neuron)
         self.conv2 = nn.Conv2d(width, width, stride=stride, kernel_size=3, padding=1, bias=False)
         self.bn2 = norm_layer(width)
-        self.sn2 = neurons.LIF(decay=0.2, threshold=0.3, time_step=time_step)
+        self.sn2 = copy.deepcopy(spiking_neuron)
         self.conv3 = nn.Conv2d(width, planes*self.expansion, kernel_size=1, bias=False)
         self.bn3 = norm_layer(planes*self.expansion)
-        self.sn3 = neurons.LIF(decay=0.2, threshold=0.3, time_step=time_step)
+        self.sn3 = copy.deepcopy(spiking_neuron)
         self.downsample = downsample
         self.stride = stride
         self.time_step = time_step
@@ -109,7 +109,7 @@ class Bottleneck(nn.Module):
 
 
 class SpikingResNet(nn.Module):
-    def __init__(self, block, layers, time_step, num_classes):
+    def __init__(self, spiking_neuron, block, layers, time_step, num_classes):
         super(SpikingResNet, self).__init__()
         norm_layer = nn.BatchNorm2d
         self._norm_layer = norm_layer
@@ -117,12 +117,12 @@ class SpikingResNet(nn.Module):
         self.inplanes = 64
         self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=7, stride=2, padding=3, bias=False)
         self.bn1 = norm_layer(self.inplanes)
-        self.sn1 = neurons.LIF(decay=0.2, threshold=0.3, time_step=time_step)
+        self.sn1 = copy.deepcopy(spiking_neuron)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.layer1 = self._make_layer(block, 64,  layers[0], stride=1)
-        self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
-        self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
-        self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
+        self.layer1 = self._make_layer(spiking_neuron, block, 64,  layers[0], stride=1)
+        self.layer2 = self._make_layer(spiking_neuron, block, 128, layers[1], stride=2)
+        self.layer3 = self._make_layer(spiking_neuron, block, 256, layers[2], stride=2)
+        self.layer4 = self._make_layer(spiking_neuron, block, 512, layers[3], stride=2)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(512*block.expansion, num_classes)
 
@@ -133,7 +133,7 @@ class SpikingResNet(nn.Module):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
 
-    def _make_layer(self, block, planes, blocks, stride=1):
+    def _make_layer(self, spiking_neuron, block, planes, blocks, stride=1):
         norm_layer = self._norm_layer
         downsample = None
         if stride != 1 or self.inplanes != planes*block.expansion:
@@ -142,10 +142,10 @@ class SpikingResNet(nn.Module):
                 norm_layer(planes*block.expansion),
             )
         layers = []
-        layers.append(block(self.inplanes, planes, self.time_step, stride, downsample, norm_layer))
-        self.inplanes = planes*block.expansion
+        layers.append(block(spiking_neuron, self.inplanes, planes, self.time_step, stride, downsample, norm_layer))
+        self.inplanes = planes * block.expansion
         for _ in range(1, blocks):
-            layers.append(block(self.inplanes, planes, self.time_step, norm_layer=norm_layer))
+            layers.append(block(spiking_neuron, self.inplanes, planes, self.time_step, norm_layer=norm_layer))
         return nn.Sequential(*layers)
 
     def forward(self, x):
@@ -174,13 +174,13 @@ class SpikingResNet(nn.Module):
         return x
 
 
-def spiking_resnet18(time_step, num_classes):
-    return SpikingResNet(block=BasicBlock, layers=[2, 2, 2, 2], time_step=time_step, num_classes=num_classes)
+def spiking_resnet18(spiking_neuron, time_step, num_classes):
+    return SpikingResNet(spiking_neuron, block=BasicBlock, layers=[2, 2, 2, 2], time_step=time_step, num_classes=num_classes)
 
 
-def spiking_resnet34(time_step, num_classes):
-    return SpikingResNet(block=BasicBlock, layers=[3, 4, 6, 3], time_step=time_step, num_classes=num_classes)
+def spiking_resnet34(spiking_neuron, time_step, num_classes):
+    return SpikingResNet(spiking_neuron, block=BasicBlock, layers=[3, 4, 6, 3], time_step=time_step, num_classes=num_classes)
 
 
-def spiking_resnet50(time_step, num_classes):
-    return SpikingResNet(block=Bottleneck, layers=[3, 4, 6, 3], time_step=time_step, num_classes=num_classes)
+def spiking_resnet50(spiking_neuron, time_step, num_classes):
+    return SpikingResNet(spiking_neuron, block=Bottleneck, layers=[3, 4, 6, 3], time_step=time_step, num_classes=num_classes)
