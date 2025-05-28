@@ -12,8 +12,9 @@ import fused_resnet
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--device", type=str, default="0")
-    parser.add_argument("--data_root", type=str, default="../../../data")
+    parser.add_argument("--data_root", type=str, default="../data")
     parser.add_argument("--dataset", type=str, default="MNIST", help="MNIST, CIFAR-10, N-MNIST, DvsGesture")
+    parser.add_argument("--neuron", type=str, default="LIF", help="LIF, TernaryLIF")
     parser.add_argument("--arch", type=str, default="Spiking-ResNet18", help="Spiking-ResNet18, Spiking-ResNet34, Spiking-ResNet50")
     parser.add_argument("--timing", action="store_true", default=True, help="Timing or not")
     return parser.parse_args()
@@ -72,33 +73,45 @@ if __name__ == "__main__":
         is_dvs = True
     
     else:
-        print("Error: Not Supported Dataset.")
-        import sys; sys.exit(1)
+        raise NotImplementedError("Not supported dataset.")
     
     
     """
-        Model Selection
+        Spiking Neuron Selection
+    """
+    if args.neuron == "LIF":
+        from neuron import LIF
+        spiking_neuron = LIF(decay=0.2, threshold=0.3, time_step=T)
+    elif args.neuron == "TernaryLIF":
+        from neuron import TernaryLIF
+        spiking_neuron = TernaryLIF(decay=0.2, threshold=0.3, time_step=T)
+    else:
+        raise NotImplementedError("Not supported spiking neuron.")
+    
+
+    """
+        Architecture Selection
     """
     if args.arch == "Spiking-ResNet18":
-        model = fused_resnet.spiking_resnet18(time_step=T, num_classes=C).to(device)
+        model = fused_resnet.spiking_resnet18(spiking_neuron=spiking_neuron, time_step=T, num_classes=C).to(device)
     
     elif args.arch == "Spiking-ResNet34":
-        model = fused_resnet.spiking_resnet34(time_step=T, num_classes=C).to(device)
+        model = fused_resnet.spiking_resnet34(spiking_neuron=spiking_neuron, time_step=T, num_classes=C).to(device)
     
     elif args.arch == "Spiking-ResNet50":
-        model = fused_resnet.spiking_resnet50(time_step=T, num_classes=C).to(device)
+        model = fused_resnet.spiking_resnet50(spiking_neuron=spiking_neuron, time_step=T, num_classes=C).to(device)
     
     else:
-        print("Error: Not Supported Model Selection.")
-        import sys; sys.exit(1)
+        raise RuntimeError("Not supported neural architecture.")
     
     
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     
     print(model)
-    print(f"selected dataset: {args.dataset}")
-    print(f"selected model:   {args.arch}")
+    print(f"selected dataset:      {args.dataset}")
+    print(f"selected neuron:       {args.neuron}")
+    print(f"selected architecture: {args.arch}")
     
     
     """
