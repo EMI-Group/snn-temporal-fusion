@@ -1,4 +1,9 @@
-# Towards Scalable GPU-Accelerated SNN Training via Temporal Fusion
+
+---
+
+<h3 align="center"> Towards Scalable GPU-Accelerated SNN Training via Temporal Fusion </h3>
+
+---
 
 <p align="center">
   <a href="https://arxiv.org/abs/2408.00280">
@@ -35,7 +40,30 @@ chmod 755 ./MultiGPUTest
 
 The number of GPUs and the number of time steps for the model need to be specified at runtime. Please ensure that the environment has a sufficient number of GPUs available.
 
-## Citing This Work
+## Building the CUDA Kernel from Source
+
+Due to environment and version differences (e.g., CUDA version, PyTorch version, or system libraries), the provided precompiled .so kernel may not work properly on all machines. If you encounter compatibility issues or wish to compile the kernel from source for your specific environment, please follow the steps below.
+
+### 1. Install Dependencies
+Make sure your system has the necessary compiler toolchain and Python development headers:
+```shell
+apt install g++
+apt install python3.10-dev # Match your Python version if different
+pip install setuptools
+```
+> If you're using a different Python version, replace `python3.10-dev` accordingly.
+
+### 2. Build the Extension
+Navigate to the kernel source directory and compile the extension in-place:
+```shell
+cd ./single_gpu/kernel/
+python setup.py build_ext --inplace
+```
+This will generate a `.so` file (e.g., `temporal_fusion_kernel.cpython-310-x86_64-linux-gnu.so`) that can be directly imported and used within the project.
+
+## Citation
+
+If this work contributes to your research, please acknowledge it by citing the following publication:
 
 ```latex
 @InProceedings{snn_temporal_fusion_2024,
