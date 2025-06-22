@@ -7,7 +7,7 @@
 
 <p align="center">
   <picture>
-    <img src="docs/source/_static/temporal-fusion-overview.jpg" alt="Temporal Fusion Overview" height="490">
+    <img src="docs/source/_static/temporal-fusion-overview.jpg" alt="Temporal Fusion Overview" height="460">
   </picture>
 </p>
 
