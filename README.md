@@ -6,13 +6,19 @@
 ---
 
 <p align="center">
-  <a href="https://arxiv.org/abs/2408.00280">
-    <img src="https://img.shields.io/badge/paper-arxiv-red?style=for-the-badge" alt="SNN Temporal Fusion Paper on arXiv">
-  </a>
+  <picture>
+    <img src="docs/source/_static/temporal-fusion-overview.jpg" alt="Temporal Fusion Overview" height="490">
+  </picture>
 </p>
 
+This work introduces a **GPU-accelerated training framework for Spiking Neural Networks (SNNs)** via a novel **temporal fusion** mechanism that streamlines spike-based propagation across time steps. Motivated by the demand for scalable and efficient SNN training on general-purpose hardware, this method significantly reduces memory overhead and enhances kernel-level parallelism through fused computation. We validate its effectiveness on both real-world and synthetic benchmarks across single- and multi-GPU settings.  
+Extensive experiments show **up to ~40× improvement** over representative SNN libraries, supporting practical and scalable deployment of SNNs on mainstream platforms.
 
-This work presents a novel *temporal fusion* method, specifically designed to expedite the propagation dynamics of SNNs on GPU platforms, which serves as an enhancement to the current significant approaches for handling deep learning tasks with SNNs. This method underwent thorough validation through extensive experiments in both authentic training scenarios and idealized conditions, confirming its efficacy and adaptability for single and multi-GPU systems. 
+- **Official publication** in *Artificial Neural Networks and Machine Learning – ICANN 2024*:  
+[DOI: 10.1007/978-3-031-72341-4_5](https://doi.org/10.1007/978-3-031-72341-4_5)
+
+- **Accepted manuscript** available on *arXiv*:  
+[arXiv:2408.00280](https://arxiv.org/abs/2408.00280)
 
 ## Experiment Setup and Execution
 
