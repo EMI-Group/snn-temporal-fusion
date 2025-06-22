@@ -69,19 +69,19 @@ This will generate a `.so` file (e.g., `temporal_fusion_kernel.cpython-310-x86_6
 
 ## Citation
 
-If this work contributes to your research, please acknowledge it by citing the following publication:
+If this work contributes to your research or implementation, please cite the following publication.
 
 ```latex
-@InProceedings{snn_temporal_fusion_2024,
-    title={Towards scalable {GPU}-accelerated {SNN} training via temporal fusion}, 
-    author={Yanchen Li and Jiachun Li and Kebin Sun and Luziwei Leng and Ran Cheng},
-    year={2024},
-    booktitle={Artificial Neural Networks and Machine Learning -- ICANN 2024},
-    publisher={Springer Nature Switzerland},
-    address={Cham},
-    pages={58--73},
-    isbn={978-3-031-72341-4},
-    doi={10.1007/978-3-031-72341-4_5},
+@inproceedings{snn_temporal_fusion_2024,
+  author       = {Yanchen Li and Jiachun Li and Kebin Sun and Luziwei Leng and Ran Cheng},
+  title        = {Towards scalable {GPU}-accelerated {SNN} training via temporal fusion},
+  booktitle    = {Artificial Neural Networks and Machine Learning - {ICANN} 2024, Proceedings, Part {IV}},
+  series       = {Lecture Notes in Computer Science},
+  volume       = {15019},
+  pages        = {58--73},
+  publisher    = {Springer},
+  year         = {2024},
+  doi          = {10.1007/978-3-031-72341-4\_5},
 }
 ```
 
